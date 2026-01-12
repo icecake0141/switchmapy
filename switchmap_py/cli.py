@@ -1,3 +1,15 @@
+# Copyright 2024 switchmapy
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# This file was created or modified with the assistance of an AI (Large Language Model).
+# Review required for correctness, security, and licensing.
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -6,6 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+import yaml
 
 from switchmap_py.config import SiteConfig, default_config_path
 from switchmap_py.model.mac import MacEntry
@@ -20,7 +33,14 @@ app = typer.Typer(help="Switchmap Python CLI")
 
 def _load_config(path: Optional[Path]) -> SiteConfig:
     config_path = path or default_config_path()
-    return SiteConfig.load(config_path)
+    try:
+        return SiteConfig.load(config_path)
+    except FileNotFoundError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    except (ValueError, yaml.YAMLError) as exc:
+        raise typer.BadParameter(
+            f"Failed to load config '{config_path}': {exc}"
+        ) from exc
 
 
 def _configure_logging(
@@ -50,6 +70,11 @@ def scan_switch(
     info: bool = typer.Option(False, "--info"),
     warn: bool = typer.Option(False, "--warn"),
     logfile: Optional[Path] = typer.Option(None, "--logfile"),
+    prune_missing: bool = typer.Option(
+        False,
+        "--prune-missing",
+        help="Remove ports that are missing from the latest scan.",
+    ),
 ) -> None:
     """Scan switches and update idlesince data."""
     _configure_logging(debug=debug, info=info, warn=warn, logfile=logfile)
@@ -60,7 +85,7 @@ def scan_switch(
             continue
         snapshots = collect_port_snapshots(sw, site.snmp_timeout, site.snmp_retries)
         current = store.load(sw.name)
-        updated = {}
+        updated = {} if prune_missing else dict(current)
         for snapshot in snapshots:
             state = current.get(snapshot.name)
             updated[snapshot.name] = store.update_port(
@@ -94,7 +119,9 @@ def get_arp(
                 continue
             mac, ip, *rest = [part.strip() for part in line.split(",")]
             hostname = rest[0] if rest else None
-            entries.append(MacEntry(mac=mac, ip=ip, hostname=hostname, switch=None, port=None))
+            entries.append(
+                MacEntry(mac=mac, ip=ip, hostname=hostname, switch=None, port=None)
+            )
     else:
         raise typer.BadParameter("Only csv source is supported in this implementation")
     store.save(entries)
@@ -111,14 +138,22 @@ def build_html(
 ) -> None:
     """Build static HTML output."""
     _configure_logging(debug=debug, info=info, warn=warn, logfile=logfile)
+    logger = logging.getLogger(__name__)
     site = _load_config(config)
     build_date = datetime.fromisoformat(date) if date else datetime.now()
-    switches = [
-        collect_switch_state(sw, site.snmp_timeout, site.snmp_retries)
-        for sw in site.switches
-    ]
+    switches = []
+    failed_switches = []
+    for sw in site.switches:
+        try:
+            switches.append(
+                collect_switch_state(sw, site.snmp_timeout, site.snmp_retries)
+            )
+        except Exception:
+            logger.exception("Failed to collect switch state for %s", sw.name)
+            failed_switches.append(sw.name)
     build_site(
         switches=switches,
+        failed_switches=failed_switches,
         output_dir=site.destination_directory,
         template_dir=Path(__file__).parent / "render" / "templates",
         static_dir=Path(__file__).parent / "render" / "static",

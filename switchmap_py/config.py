@@ -49,7 +49,13 @@ class SiteConfig(BaseSettings):
 
     @classmethod
     def load(cls, path: Path) -> "SiteConfig":
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
         raw = yaml.safe_load(path.read_text())
+        if raw is None:
+            raw = {}
+        if not isinstance(raw, dict):
+            raise ValueError("Config file must contain a YAML mapping at the top level.")
         return cls(**raw)
 
 

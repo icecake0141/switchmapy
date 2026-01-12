@@ -1,9 +1,22 @@
+# Copyright 2024
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# This file was created or modified with the assistance of an AI (Large Language Model).
+# Review required for correctness, security, and licensing.
+
 from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime
 import json
 from pathlib import Path
+import shutil
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -22,6 +35,7 @@ def build_environment(template_dir: Path) -> Environment:
 def build_site(
     *,
     switches: list[Switch],
+    failed_switches: list[str],
     output_dir: Path,
     template_dir: Path,
     static_dir: Path,
@@ -41,7 +55,11 @@ def build_site(
 
     maclist = maclist_store.load()
 
-    index_html = index_template.render(switches=switches, build_date=build_date)
+    index_html = index_template.render(
+        switches=switches,
+        failed_switches=failed_switches,
+        build_date=build_date,
+    )
     (output_dir / "index.html").write_text(index_html)
 
     for switch in switches:
@@ -59,14 +77,18 @@ def build_site(
     search_html = search_template.render(build_date=build_date)
     (output_dir / "search" / "index.html").write_text(search_html)
 
-    for asset in static_dir.glob("*"):
-        if asset.is_file():
-            (output_dir / asset.name).write_text(asset.read_text())
+    for asset in static_dir.iterdir():
+        destination = output_dir / asset.name
+        if asset.is_dir():
+            shutil.copytree(asset, destination, dirs_exist_ok=True)
+        elif asset.is_file():
+            shutil.copyfile(asset, destination)
 
     search_payload = {
         "generated_at": build_date.isoformat(),
         "switches": [asdict(switch) for switch in switches],
         "maclist": [entry.__dict__ for entry in maclist],
+        "failed_switches": failed_switches,
     }
     (output_dir / "search" / "index.json").write_text(
         json.dumps(search_payload, indent=2)
