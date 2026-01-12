@@ -1,3 +1,15 @@
+# Copyright 2024
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# This file was created or modified with the assistance of an AI (Large Language Model).
+# Review required for correctness, security, and licensing.
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -94,7 +106,9 @@ def get_arp(
                 continue
             mac, ip, *rest = [part.strip() for part in line.split(",")]
             hostname = rest[0] if rest else None
-            entries.append(MacEntry(mac=mac, ip=ip, hostname=hostname, switch=None, port=None))
+            entries.append(
+                MacEntry(mac=mac, ip=ip, hostname=hostname, switch=None, port=None)
+            )
     else:
         raise typer.BadParameter("Only csv source is supported in this implementation")
     store.save(entries)
