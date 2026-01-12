@@ -1,3 +1,15 @@
+# Copyright 2024
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# This file was created or modified with the assistance of an AI (Large Language Model).
+# Review required for correctness, security, and licensing.
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -34,9 +46,7 @@ def _normalize_status(value: str) -> str:
     return {"1": "up", "2": "down"}.get(value, value)
 
 
-def collect_switch_state(
-    switch: SwitchConfig, timeout: int, retries: int
-) -> Switch:
+def collect_switch_state(switch: SwitchConfig, timeout: int, retries: int) -> Switch:
     session = build_session(switch, timeout, retries)
     names = session.get_table(mibs.IF_NAME)
     descrs = session.get_table(mibs.IF_DESCR)
@@ -48,7 +58,9 @@ def collect_switch_state(
     for oid, name in names.items():
         index = oid.split(".")[-1]
         descr = descrs.get(f"{mibs.IF_DESCR}.{index}", "")
-        admin_status = _normalize_status(admin.get(f"{mibs.IF_ADMIN_STATUS}.{index}", ""))
+        admin_status = _normalize_status(
+            admin.get(f"{mibs.IF_ADMIN_STATUS}.{index}", "")
+        )
         oper_status = _normalize_status(oper.get(f"{mibs.IF_OPER_STATUS}.{index}", ""))
         speed = speeds.get(f"{mibs.IF_SPEED}.{index}")
         ports.append(
