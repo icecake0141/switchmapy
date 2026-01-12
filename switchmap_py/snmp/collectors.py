@@ -50,6 +50,15 @@ def _format_mac(parts: list[str]) -> str:
     return ":".join(f"{int(part):02x}" for part in parts)
 
 
+def _select_port_name(if_name: str, if_descr: str, ifindex: int | None) -> str:
+    # Priority: IF_NAME (if non-empty) → IF_DESCR → ifIndex as a last resort.
+    if if_name:
+        return if_name
+    if if_descr:
+        return if_descr
+    return str(ifindex) if ifindex is not None else ""
+
+
 def _parse_mac_from_oid(oid: str, prefix: str, *, vlan_aware: bool) -> tuple[str, str | None] | None:
     prefix_parts = prefix.split(".")
     oid_parts = oid.split(".")
@@ -169,13 +178,18 @@ def collect_switch_state(
         index = oid.split(".")[-1]
         ifindex = int(index) if index.isdigit() else None
         descr = descrs.get(f"{mibs.IF_DESCR}.{index}", "")
+        resolved_name = _select_port_name(
+            (name or "").strip(),
+            (descr or "").strip(),
+            ifindex,
+        )
         admin_status = _normalize_status(
             admin.get(f"{mibs.IF_ADMIN_STATUS}.{index}", "")
         )
         oper_status = _normalize_status(oper.get(f"{mibs.IF_OPER_STATUS}.{index}", ""))
         speed = speeds.get(f"{mibs.IF_SPEED}.{index}")
         port = Port(
-            name=name,
+            name=resolved_name,
             descr=descr,
             admin_status=admin_status,
             oper_status=oper_status,
@@ -184,7 +198,7 @@ def collect_switch_state(
             macs=[],
             idle_since=None,
             last_active=None,
-            is_trunk=name in switch.trunk_ports,
+            is_trunk=resolved_name in switch.trunk_ports,
         )
         ports.append(port)
         if ifindex is not None:
