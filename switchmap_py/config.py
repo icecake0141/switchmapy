@@ -56,9 +56,7 @@ class SiteConfig(BaseSettings):
         if raw is None:
             raw = {}
         if not isinstance(raw, dict):
-            raise ValueError(
-                "Config file must contain a YAML mapping at the top level."
-            )
+            raise ValueError("Config file must contain a YAML mapping at the top level.")
         return cls(**raw)
 
 
