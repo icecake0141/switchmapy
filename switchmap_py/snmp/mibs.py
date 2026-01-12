@@ -1,3 +1,15 @@
+# Copyright 2024
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# This file was created or modified with the assistance of an AI (Large Language Model).
+# Review required for correctness, security, and licensing.
+
 IF_NAME = "1.3.6.1.2.1.31.1.1.1.1"
 IF_DESCR = "1.3.6.1.2.1.2.2.1.2"
 IF_ADMIN_STATUS = "1.3.6.1.2.1.2.2.1.7"
