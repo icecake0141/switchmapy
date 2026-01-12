@@ -1,3 +1,17 @@
+<!--
+Copyright 2024 switchmapy
+SPDX-License-Identifier: Apache-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This file was created or modified with the assistance of an AI (Large Language Model).
+Review required for correctness, security, and licensing.
+-->
+
 # Switchmap Python Usage
 
 ## Install
@@ -48,6 +62,16 @@ switchmap scan-switch
 switchmap get-arp --source csv --csv maclist.csv
 switchmap build-html
 switchmap serve-search --host 0.0.0.0 --port 8000
+```
+
+### ARP CSV format
+
+The `get-arp` command expects one entry per line with at least MAC and IP columns.
+Optional hostname values may follow. Invalid or incomplete rows are skipped with a warning.
+
+```csv
+aa:bb:cc:dd:ee:ff,192.0.2.10,example-host
+11:22:33:44:55:66,192.0.2.20
 ```
 
 ## Cron example
