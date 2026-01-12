@@ -1,5 +1,5 @@
 <!--
-Copyright 2025 OpenAI
+Copyright 2024 switchmapy
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,8 +64,15 @@ switchmap build-html
 switchmap serve-search --host 0.0.0.0 --port 8000
 ```
 
-`scan-switch` keeps idle port entries for ports missing from the latest snapshot. Use
-`--prune-missing` to remove ports that are no longer observed.
+### ARP CSV format
+
+The `get-arp` command expects one entry per line with at least MAC and IP columns.
+Optional hostname values may follow. Invalid or incomplete rows are skipped with a warning.
+
+```csv
+aa:bb:cc:dd:ee:ff,192.0.2.10,example-host
+11:22:33:44:55:66,192.0.2.20
+```
 
 ## Cron example
 
