@@ -169,7 +169,9 @@ def collect_switch_state(
         index = oid.split(".")[-1]
         ifindex = int(index) if index.isdigit() else None
         descr = descrs.get(f"{mibs.IF_DESCR}.{index}", "")
-        admin_status = _normalize_status(admin.get(f"{mibs.IF_ADMIN_STATUS}.{index}", ""))
+        admin_status = _normalize_status(
+            admin.get(f"{mibs.IF_ADMIN_STATUS}.{index}", "")
+        )
         oper_status = _normalize_status(oper.get(f"{mibs.IF_OPER_STATUS}.{index}", ""))
         speed = speeds.get(f"{mibs.IF_SPEED}.{index}")
         port = Port(
