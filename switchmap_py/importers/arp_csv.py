@@ -22,6 +22,8 @@ Contract:
 - Blank lines are ignored
 - Invalid rows are skipped with logging warnings
 - MAC addresses must match pattern: XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX
+  Note: The regex allows each octet pair to use either separator independently,
+  providing flexible parsing for various input formats.
 - IP addresses must be valid IPv4 or IPv6 addresses
 """
 
@@ -138,6 +140,8 @@ def load_arp_csv(csv_path: Path) -> list[MacEntry]:
     """Load ARP entries from a CSV file.
     
     Opens the CSV file and parses all valid entries into a list of MacEntry objects.
+    The newline='' parameter is required by Python's csv module to ensure proper
+    handling of newlines across different platforms.
     
     Args:
         csv_path: Path to the CSV file to load
