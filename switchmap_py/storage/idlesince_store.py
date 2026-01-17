@@ -67,7 +67,7 @@ class IdleSinceStore:
         path = self._path_for(switch_name)
         if not path.exists():
             return {}
-        raw = path.read_text()
+        raw = path.read_text(encoding="utf-8")
         data = json.loads(raw)
         result: dict[str, PortIdleState] = {}
         for port, payload in data.items():
@@ -83,6 +83,8 @@ class IdleSinceStore:
         return result
 
     def save(self, switch_name: str, data: dict[str, PortIdleState]) -> None:
+        # The sort_keys=True ensures deterministic, reproducible JSON output.
+        # The ensure_ascii=False preserves UTF-8 characters in output (instead of \uXXXX escapes).
         payload = {
             port: {
                 "idle_since": state.idle_since.isoformat()
@@ -95,7 +97,8 @@ class IdleSinceStore:
             for port, state in data.items()
         }
         self._path_for(switch_name).write_text(
-            json.dumps(payload, indent=2, sort_keys=True)
+            json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False),
+            encoding="utf-8",
         )
 
     def update_port(

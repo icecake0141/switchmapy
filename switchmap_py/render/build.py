@@ -65,22 +65,22 @@ def build_site(
         failed_switches=failed_switches,
         build_date=build_date,
     )
-    (output_dir / "index.html").write_text(index_html)
+    (output_dir / "index.html").write_text(index_html, encoding="utf-8")
 
     for switch in switches:
         idle_states = idlesince_store.load(switch.name)
         switch_html = switch_template.render(
             switch=switch, idle_states=idle_states, build_date=build_date
         )
-        (output_dir / "switches" / f"{switch.name}.html").write_text(switch_html)
+        (output_dir / "switches" / f"{switch.name}.html").write_text(switch_html, encoding="utf-8")
 
     port_html = port_template.render(
         switches=switches, maclist=maclist, build_date=build_date
     )
-    (output_dir / "ports" / "index.html").write_text(port_html)
+    (output_dir / "ports" / "index.html").write_text(port_html, encoding="utf-8")
 
     search_html = search_template.render(build_date=build_date)
-    (output_dir / "search" / "index.html").write_text(search_html)
+    (output_dir / "search" / "index.html").write_text(search_html, encoding="utf-8")
 
     for asset in static_dir.iterdir():
         destination = output_dir / asset.name
@@ -89,12 +89,18 @@ def build_site(
         elif asset.is_file():
             shutil.copyfile(asset, destination)
 
+    # JSON serialization: Using asdict() for all dataclasses to ensure consistent
+    # schema representation. MacEntry is a dataclass, so we use asdict() instead
+    # of __dict__ to maintain consistency with the Switch serialization approach.
+    # The sort_keys=True ensures deterministic, reproducible JSON output.
+    # The ensure_ascii=False preserves UTF-8 characters in output (instead of \uXXXX escapes).
     search_payload = {
         "generated_at": build_date.isoformat(),
         "switches": [asdict(switch) for switch in switches],
-        "maclist": [entry.__dict__ for entry in maclist],
+        "maclist": [asdict(entry) for entry in maclist],
         "failed_switches": failed_switches,
     }
     (output_dir / "search" / "index.json").write_text(
-        json.dumps(search_payload, indent=2)
+        json.dumps(search_payload, indent=2, sort_keys=True, ensure_ascii=False),
+        encoding="utf-8",
     )

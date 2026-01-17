@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 import json
 import logging
 from pathlib import Path
@@ -28,7 +29,7 @@ class MacListStore:
     def load(self) -> list[MacEntry]:
         if not self.path.exists():
             return []
-        payload = json.loads(self.path.read_text())
+        payload = json.loads(self.path.read_text(encoding="utf-8"))
         entries: list[MacEntry] = []
         skipped: list[str] = []
         for index, entry in enumerate(payload):
@@ -45,5 +46,11 @@ class MacListStore:
         return entries
 
     def save(self, entries: list[MacEntry]) -> None:
-        payload = [entry.__dict__ for entry in entries]
-        self.path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+        # Using asdict() for consistent dataclass serialization approach.
+        # The sort_keys=True ensures deterministic, reproducible JSON output.
+        # The ensure_ascii=False preserves UTF-8 characters in output (instead of \uXXXX escapes).
+        payload = [asdict(entry) for entry in entries]
+        self.path.write_text(
+            json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False),
+            encoding="utf-8",
+        )

@@ -20,4 +20,4 @@ def load_index(output_dir: Path) -> dict:
     index_path = output_dir / "search" / "index.json"
     if not index_path.exists():
         return {}
-    return json.loads(index_path.read_text())
+    return json.loads(index_path.read_text(encoding="utf-8"))
