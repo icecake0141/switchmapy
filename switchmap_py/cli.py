@@ -28,6 +28,7 @@ from switchmap_py.model.mac import MacEntry
 from switchmap_py.render.build import build_site
 from switchmap_py.search.app import SearchServer
 from switchmap_py.snmp.collectors import collect_port_snapshots, collect_switch_state
+from switchmap_py.snmp.session import SnmpError
 from switchmap_py.storage.idlesince_store import IdleSinceStore
 from switchmap_py.storage.maclist_store import MacListStore
 
@@ -94,7 +95,11 @@ def scan_switch(
         help="Remove ports that are missing from the latest scan.",
     ),
 ) -> None:
-    """Scan switches and update idlesince data."""
+    """Scan switches and update idlesince data.
+    
+    This command fails fast on any error (including SNMP errors) to ensure
+    scan failures are immediately visible to the operator.
+    """
     _configure_logging(debug=debug, info=info, warn=warn, logfile=logfile)
     site = _load_config(config)
     store = IdleSinceStore(site.idlesince_directory)
@@ -181,7 +186,13 @@ def build_html(
     warn: bool = typer.Option(False, "--warn"),
     logfile: Optional[Path] = typer.Option(None, "--logfile"),
 ) -> None:
-    """Build static HTML output."""
+    """Build static HTML output.
+    
+    Collects state from all configured switches and generates static HTML reports.
+    SNMP errors for individual switches are logged and those switches are marked as
+    failed, allowing the build to continue with remaining switches. Any other
+    exception type will cause the command to fail fast.
+    """
     _configure_logging(debug=debug, info=info, warn=warn, logfile=logfile)
     logger = logging.getLogger(__name__)
     site = _load_config(config)
@@ -193,7 +204,9 @@ def build_html(
             switches.append(
                 collect_switch_state(sw, site.snmp_timeout, site.snmp_retries)
             )
-        except Exception:
+        except SnmpError:
+            # Only catch expected SNMP operational errors. Log and continue
+            # with other switches. Programming errors will propagate.
             logger.exception("Failed to collect switch state for %s", sw.name)
             failed_switches.append(sw.name)
     build_site(
