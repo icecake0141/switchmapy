@@ -10,6 +10,16 @@
 # This file was created or modified with the assistance of an AI (Large Language Model).
 # Review required for correctness, security, and licensing.
 
+"""SNMP data collection for network switches.
+
+This module collects port and MAC information from network switches via SNMP.
+Error handling strategy:
+- SnmpError: Expected operational errors (timeouts, auth failures, etc.) are caught
+  and logged where appropriate, allowing collection to continue with partial data.
+- Other exceptions: Programming errors propagate to fail fast, ensuring bugs are
+  not masked as operational errors.
+"""
+
 from __future__ import annotations
 
 import logging
